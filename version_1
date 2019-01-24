@@ -1,0 +1,106 @@
+#include <16f627.h>
+#fuses nowdt,noprotect,nolvp                 // hs lo quité para dejar el micro funcionando con oscilador interno
+#use delay(internal=4M)                      //frecuencia del oscilador interno
+#byte portc=7
+#byte portb=6
+#FUSES INTRC                                 // activa los fuses para el oscilador interno
+#fuses NOMCLR                                // deshabilita el Master CLear
+
+
+int8 temp;
+int8 temp1;
+int8 t;
+int1 flag;
+int8 Mask;
+int8 i;
+int8 j;
+
+
+
+
+
+//const unsigned char letra[4][16]={
+//{0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111},
+//{0b01111000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b10000111,0b00000000,0b00000000,0b00000000,0b0000000,0b00000000,0b00000000,0b00000000},
+//{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b10011111,0b00000000,0b00000000,0b00000000,0b10000001,0b00000000,0b00000000,0b00000000},
+//{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b10000001,0b00000000,0b00000000,0b00000000,0b10011111,0b00000000,0b00000000,0b00000000},
+//{0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111,0b11111111},
+//{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b10000001,0b00000000,0b00000000,0b00000000,0b10000111,0b00000000,0b00000000,0b00000000},
+//};
+
+const unsigned char letra[4][16]={
+{0b11111111,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b0000000,0b00000000,0b00000000,0b00000000},
+{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000},
+{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000},
+{0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000,0b00000000},
+};
+
+
+
+void main ()
+{
+ 
+
+set_tris_a(0b00000000);                       //puerto a como salida
+set_tris_b(0b00000000);                       //puerto b como salida
+
+output_a(0b00000000);
+Mask = 0x0001;
+
+
+for(;;){
+for (j=0; j<4; j++)                            //escoger el transistor que estará activando los 128 por instante de tiempo
+{
+for (i=0; i<16; i++)                           //cuenta cada uno de los registradores de desplazamiento
+{
+temp=letra[j][i];                              // apunto a la posición de la matriz para acceder a cada una de las palabras de 8 bits
+for (t=0; t<8; t++)                            // cuenta cada uno de los 8 bits en la palabra a ser transmitida
+{temp1=temp;
+flag = temp1 & Mask;                           //acceder exclusivamente a 1 bit en la palabra a ser transmitida
+if(flag==0) 
+output_low(pin_b2);
+else output_high(pin_b2);
+output_high(pin_b0);                           //crea el frente de subida para activar la señal de clock para enviar el bit
+output_low(pin_b0);
+temp = temp >> 1;                              //desplazo el bit que quiero leer
+}
+
+
+//}
+
+ 
+}
+   switch(j){                                   //creo los estados para habilitar los transistores que realizan la multiplexación
+      case 0:
+      output_low(pin_a0);
+output_low(pin_a1);
+         break;
+      case 1:
+        output_high(pin_a0);
+         break;
+      case 2:
+          output_low(pin_a0);
+          output_high(pin_a1);
+         break;
+      case 3:
+          output_high(pin_a0);
+          output_high(pin_a1);
+         break;
+   }        
+output_high(pin_b1);                                 //pulso de reloj para mostrar las palabras de bits a la salida de los registros de desplazamiento
+output_low(pin_b1);
+delay_ms(500);                                       //tiempo para crear la sensación de persistencia
+
+//delay_ms(500);
+}
+}
+
+
+
+
+
+}
+
+
+
+
